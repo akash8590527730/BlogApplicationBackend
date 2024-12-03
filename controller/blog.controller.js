@@ -61,6 +61,31 @@ export const deleteBlog = async(req,res)=>{
   await blog.deleteOne();
   res.status(200).json({message:"Blog deleted successfully"})
 }
+export const searchBlogs = async (req, res) => {
+  try {
+    const { category } = req.query;
+
+    // If no category is provided, return all blogs
+    if (!category) {
+      const allBlogs = await Blog.find();
+      return res.status(200).json(allBlogs);
+    }
+
+    // Find blogs matching the category (case-insensitive)
+    const blogs = await Blog.find({
+      category: { $regex: category, $options: "i" },
+    });
+
+    if (blogs.length === 0) {
+      return res.status(404).json({ message: "No blogs found for this category" });
+    }
+
+    res.status(200).json(blogs);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
 export const getAllBlogs = async (req, res) => {
   const allBlogs = await Blog.find();
   res.status(200).json(allBlogs);
