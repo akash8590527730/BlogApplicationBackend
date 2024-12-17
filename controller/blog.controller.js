@@ -82,71 +82,13 @@ export const getMyBlogs = async (req, res) => {
   res.status(200).json(myBlogs);
 };
 export const updateBlog = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Check for valid Blog ID
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ message: "Invalid Blog ID" });
-    }
-
-    // Find the existing blog
-    const existingBlog = await Blog.findById(id);
-    if (!existingBlog) {
-      return res.status(404).json({ message: "Blog not found" });
-    }
-
-    const { title, category, about } = req.body;
-
-    // Optional: Handle image update
-    let updatedImageData = existingBlog.blogImage; // Default to existing image
-    if (req.files && req.files.blogImage) {
-      const { blogImage } = req.files;
-
-      // Validate image format
-      const allowedFormats = ["image/jpeg", "image/png", "image/webp"];
-      if (!allowedFormats.includes(blogImage.mimetype)) {
-        return res.status(400).json({
-          message: "Invalid photo format. Only jpg and png are allowed",
-        });
-      }
-
-      // Delete the old image from Cloudinary
-      await cloudinary.uploader.destroy(existingBlog.blogImage.public_id);
-
-      // Upload the new image
-      const cloudinaryResponse = await cloudinary.uploader.upload(
-        blogImage.tempFilePath
-      );
-      if (!cloudinaryResponse || cloudinaryResponse.error) {
-        return res.status(500).json({ message: "Image upload failed" });
-      }
-
-      updatedImageData = {
-        public_id: cloudinaryResponse.public_id,
-        url: cloudinaryResponse.url,
-      };
-    }
-
-    // Prepare updated data
-    const updatedData = {
-      title: title || existingBlog.title,
-      category: category || existingBlog.category,
-      about: about || existingBlog.about,
-      blogImage: updatedImageData,
-    };
-
-    // Update the blog
-    const updatedBlog = await Blog.findByIdAndUpdate(id, updatedData, {
-      new: true,
-    });
-
-    res.status(200).json({
-      message: "Blog updated successfully",
-      updatedBlog,
-    });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: "Internal Server Error" });
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ message: "Invalid Blog id" });
   }
+  const updatedBlog = await Blog.findByIdAndUpdate(id, req.body, { new: true });
+  if (!updatedBlog) {
+    return res.status(404).json({ message: "Blog not found" });
+  }
+  res.status(200).json(updatedBlog);
 };
